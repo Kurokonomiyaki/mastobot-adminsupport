@@ -3,6 +3,7 @@ import Path from 'path';
 
 import { ADMINS, BOT_ACCOUNT } from './settings';
 
+
 export const makeFullyQualifiedAccount = (account) => {
   let result = account.toLowerCase().trim();
   if (result.startsWith('@') === false) {

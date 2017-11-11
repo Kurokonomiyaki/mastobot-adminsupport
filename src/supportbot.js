@@ -45,7 +45,6 @@ const onMessageReceived = (instance, message) => {
   if (event === 'notification' && data.type === 'mention') {
     const toot = data.status;
 
-    console.log(toot);
     if (toot.in_reply_to_id != null) {
       return;
     }
@@ -57,7 +56,7 @@ const onMessageReceived = (instance, message) => {
     parseToot(toot.content, admin, (text) => {
       if (admin) { // sent by admin
         console.log('Admin message received', authorAccount, text.replace(/[\n|\r]/gm, ''));
-        sendMessageToCommunity(instance, author.username, text);
+        sendMessageToCommunity(instance, authorAccount, text);
       } else { // sent by regular user
         console.log('User message received', authorAccount, text.replace(/[\n|\r]/gm, ''));
         sendMessageToAdmins(instance, toot.id, authorAccount, text, toot.visibility);
