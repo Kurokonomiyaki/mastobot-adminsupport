@@ -1,11 +1,7 @@
 import HtmlParser from 'htmlparser';
-import Url from 'url';
-import Path from 'path';
 import HtmlEntities from 'he';
 
-import { makeMention } from './util';
-
-import { BOT_ACCOUNT } from './settings';
+import { parseAccountUrl, isBot } from './util';
 
 const domNodeToText = (node, text = [], isAdmin = false) => {
   const { name, type, children } = node;
@@ -32,17 +28,9 @@ const domNodeToText = (node, text = [], isAdmin = false) => {
   if (name === 'a' && className != null && className.includes('mention')) {
     const { href } = attribs;
     if (href != null) {
-      const url = Url.parse(href);
-      const { hostname, pathname } = url;
-
-      if (isAdmin && pathname != null && hostname != null) {
-        const userName = Path.posix.basename(pathname);
-        if (userName != null) {
-          const account = makeMention(`${userName}@${hostname}`);
-          if (account !== makeMention(BOT_ACCOUNT)) {
-            text.push(account);
-          }
-        }
+      const account = parseAccountUrl(href);
+      if (account != null && isAdmin && isBot(account) === false) {
+        text.push(account);
       }
       return;
     }

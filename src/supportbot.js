@@ -2,17 +2,18 @@ import Mastodon from 'mastodon-api';
 
 import { parseToot } from './tootparser';
 
-import { isAdmin, makeMention } from './util';
+import { isAdmin, parseAccountUrl, ADMINS_CLEANED } from './util';
 
 import {
   INSTANCE_URL,
   ACCESS_TOKEN,
   TOOT_OPTIONS,
-  ADMINS,
   ANSWER_MESSAGE,
 } from './settings';
 
-const MENTIONNED_ADMINS = ADMINS.map(admin => makeMention(admin));
+
+const ADMINS_LIST_STRING = ADMINS_CLEANED.join(' ');
+
 
 const sendMessageToCommunity = (instance, author, message) => {
   const finalMessage = `${message}\n\n--\n${author}`;
@@ -22,10 +23,14 @@ const sendMessageToCommunity = (instance, author, message) => {
 };
 
 const sendMessageToAdmins = (instance, originalTootId, from, message, originalVisibility) => {
-  const finalMessage = `Hi ${makeMention(from)},\n\n${ANSWER_MESSAGE}\n\ncc: ${MENTIONNED_ADMINS.join(' ')}\n\n--\n${message}\n--`;
+  let finalMessage = null;
   let finalVisibility = originalVisibility;
+
   if (originalVisibility === 'direct' || originalVisibility === 'private') {
     finalVisibility = 'direct';
+    finalMessage = `Hi ${from},\n\n${ANSWER_MESSAGE}\n\ncc: ${ADMINS_LIST_STRING}\n\n--\n${message}\n--`;
+  } else {
+    finalMessage = `Hi ${from},\n\n${ANSWER_MESSAGE}\n\ncc: ${ADMINS_LIST_STRING}`;
   }
 
   instance.post('statuses', {
@@ -39,16 +44,23 @@ const onMessageReceived = (instance, message) => {
   const { event, data } = message;
   if (event === 'notification' && data.type === 'mention') {
     const toot = data.status;
+
+    console.log(toot);
+    if (toot.in_reply_to_id != null) {
+      return;
+    }
+
     const author = data.account;
-    const admin = isAdmin(author.acct);
+    const authorAccount = parseAccountUrl(author.url);
+    const admin = isAdmin(authorAccount);
 
     parseToot(toot.content, admin, (text) => {
       if (admin) { // sent by admin
-        console.log('Admin message received', author.acct, text.replace(/[\n|\r]/gm, ''));
+        console.log('Admin message received', authorAccount, text.replace(/[\n|\r]/gm, ''));
         sendMessageToCommunity(instance, author.username, text);
       } else { // sent by regular user
-        console.log('User message received', author.acct, text.replace(/[\n|\r]/gm, ''));
-        sendMessageToAdmins(instance, toot.id, author.acct, text, toot.visibility);
+        console.log('User message received', authorAccount, text.replace(/[\n|\r]/gm, ''));
+        sendMessageToAdmins(instance, toot.id, authorAccount, text, toot.visibility);
       }
     });
   }
