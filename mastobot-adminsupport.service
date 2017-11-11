@@ -1,0 +1,13 @@
+[Unit]
+Description=mastobot-adminsupport
+After=network.target
+
+[Service]
+Type=simple
+User=<specify user here>
+ExecStart=/usr/bin/node <path to your compiled mancerbot>
+TimeoutSec=15
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
