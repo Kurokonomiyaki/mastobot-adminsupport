@@ -1,36 +1,26 @@
 import Mastodon from 'mastodon-api';
 
 import { parseToot } from './tootparser';
-
-import { isAdmin, parseAccountUrl, ADMINS_CLEANED } from './util';
-
-import {
-  INSTANCE_URL,
-  ACCESS_TOKEN,
-  TOOT_OPTIONS,
-  ANSWER_MESSAGE,
-} from './settings';
+import { isAdmin, parseAccountUrl } from './util';
+import { getSettings } from './settings';
 
 
-const ADMINS_LIST_STRING = ADMINS_CLEANED.join(' ');
-
-
-const sendMessageToCommunity = (instance, author, message) => {
+const sendMessageToCommunity = (settings, instance, author, message) => {
   const finalMessage = `${message}\n\n--\n${author}`;
   instance.post('statuses', Object.assign({
     status: finalMessage,
-  }, TOOT_OPTIONS));
+  }, settings.tootOptions));
 };
 
-const sendMessageToAdmins = (instance, originalTootId, from, message, originalVisibility) => {
+const sendMessageToAdmins = (settings, instance, originalTootId, from, message, originalVisibility) => {
   let finalMessage = null;
   let finalVisibility = originalVisibility;
 
   if (originalVisibility === 'direct' || originalVisibility === 'private') {
     finalVisibility = 'direct';
-    finalMessage = `Hi ${from},\n\n${ANSWER_MESSAGE}\n\ncc: ${ADMINS_LIST_STRING}\n\n--\n${message}\n--`;
+    finalMessage = `Hi ${from},\n\n${settings.answerMessage}\n\ncc: ${settings.adminAccountsString}\n\n--\n${message}\n--`;
   } else {
-    finalMessage = `Hi ${from},\n\n${ANSWER_MESSAGE}\n\ncc: ${ADMINS_LIST_STRING}`;
+    finalMessage = `Hi ${from},\n\n${settings.answerMessage}\n\ncc: ${settings.adminAccountsString}`;
   }
 
   instance.post('statuses', {
@@ -40,7 +30,7 @@ const sendMessageToAdmins = (instance, originalTootId, from, message, originalVi
   });
 };
 
-const onMessageReceived = (instance, message) => {
+const onMessageReceived = (settings, instance, message) => {
   const { event, data } = message;
   if (event === 'notification' && data.type === 'mention') {
     const toot = data.status;
@@ -51,28 +41,30 @@ const onMessageReceived = (instance, message) => {
 
     const author = data.account;
     const authorAccount = parseAccountUrl(author.url);
-    const admin = isAdmin(authorAccount);
+    const admin = isAdmin(settings, authorAccount);
 
-    parseToot(toot.content, admin, (text) => {
+    parseToot(settings, toot.content, admin, (text) => {
       if (admin) { // sent by admin
         console.log('Admin message received', authorAccount, text.replace(/[\n|\r]/gm, ''));
-        sendMessageToCommunity(instance, authorAccount, text);
+        sendMessageToCommunity(settings, instance, authorAccount, text);
       } else { // sent by regular user
         console.log('User message received', authorAccount, text.replace(/[\n|\r]/gm, ''));
-        sendMessageToAdmins(instance, toot.id, authorAccount, text, toot.visibility);
+        sendMessageToAdmins(settings, instance, toot.id, authorAccount, text, toot.visibility);
       }
     });
   }
 };
 
 export const startBot = () => {
+  const settings = getSettings(`${__dirname}/../settings.json`);
+
   const instance = new Mastodon({
-    access_token: ACCESS_TOKEN,
-    api_url: `${INSTANCE_URL}/`,
+    access_token: settings.accessToken,
+    api_url: settings.instanceUrl,
   });
 
   const listener = instance.stream('streaming/user');
-  listener.on('message', (msg) => onMessageReceived(instance, msg));
+  listener.on('message', (msg) => onMessageReceived(settings, instance, msg));
   listener.on('error', (err) => console.log(err));
   // listener.on('heartbeat', msg => console.log('Dadoum.'));
 

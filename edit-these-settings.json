@@ -1,0 +1,14 @@
+{
+  "instanceUrl": "<your instance API url, e.g., https://my.instance/api/v1>",
+  "accessToken": "<your access token>",
+  "tootOptions": {
+    "visibility": "public",
+    "sensitive": false
+  },
+  "botAccount": "<the fully qualified account of the bot, e.g., mybot@my.instance",
+  "answerMessage": "Thank you for using our instance! I'm just a support bot, but I'm sure our admins will help you soon.",
+  "adminAccounts": [
+    "<admin account n°1, e.g., admin1@my.instance>",
+    "<admin account n°2, e.g., admin2@my.instance>"
+  ]
+}

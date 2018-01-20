@@ -1,8 +1,6 @@
 import Url from 'url';
 import Path from 'path';
 
-import { ADMINS, BOT_ACCOUNT } from './settings';
-
 
 export const makeFullyQualifiedAccount = (account) => {
   let result = account.toLowerCase().trim();
@@ -12,15 +10,12 @@ export const makeFullyQualifiedAccount = (account) => {
   return result;
 };
 
-export const BOT_ACCOUNT_CLEANED = makeFullyQualifiedAccount(BOT_ACCOUNT);
-export const ADMINS_CLEANED = ADMINS.map(admin => makeFullyQualifiedAccount(admin));
-
-export const isAdmin = (account) => {
-  return ADMINS_CLEANED.includes(account);
+export const isAdmin = ({ adminAccounts }, account) => {
+  return adminAccounts.includes(account);
 };
 
-export const isBot = (account) => {
-  return BOT_ACCOUNT_CLEANED === account;
+export const isBot = ({ botAccount }, account) => {
+  return botAccount === account;
 };
 
 export const parseAccountUrl = (url) => {

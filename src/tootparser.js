@@ -3,7 +3,7 @@ import HtmlEntities from 'he';
 
 import { parseAccountUrl, isBot } from './util';
 
-const domNodeToText = (node, text = [], isAdmin = false) => {
+const domNodeToText = (settings, node, text = [], isAdmin = false) => {
   const { name, type, children } = node;
   const attribs = node.attribs || {};
   const { class: className } = attribs;
@@ -29,7 +29,7 @@ const domNodeToText = (node, text = [], isAdmin = false) => {
     const { href } = attribs;
     if (href != null) {
       const account = parseAccountUrl(href);
-      if (account != null && isAdmin && isBot(account) === false) {
+      if (account != null && isAdmin && isBot(settings, account) === false) {
         text.push(account);
       }
       return;
@@ -39,7 +39,7 @@ const domNodeToText = (node, text = [], isAdmin = false) => {
   // analyze children
   if (children != null && children.length > 0) {
     children.forEach((child) => {
-      domNodeToText(child, text, isAdmin);
+      domNodeToText(settings, child, text, isAdmin);
     });
   }
 
@@ -48,13 +48,13 @@ const domNodeToText = (node, text = [], isAdmin = false) => {
   }
 };
 
-const analyzeTootDom = (dom, isAdmin = false) => {
+const analyzeTootDom = (settings, dom, isAdmin = false) => {
   // console.log('dom', JSON.stringify(dom, null, 2));
 
   const texts = [];
   if (dom.length > 0) {
     dom.forEach((child) => {
-      domNodeToText(child, texts, isAdmin);
+      domNodeToText(settings, child, texts, isAdmin);
     });
   }
 
@@ -65,14 +65,14 @@ const analyzeTootDom = (dom, isAdmin = false) => {
   return HtmlEntities.decode(texts.join(' ').trim());
 };
 
-export const parseToot = (toot, isAdmin, onResult) => {
+export const parseToot = (settings, toot, isAdmin, onResult) => {
   const handler = new HtmlParser.DefaultHandler((error, dom) => {
     if (error != null) {
       console.log('Parse error', error);
       return;
     }
 
-    onResult(analyzeTootDom(dom, isAdmin));
+    onResult(analyzeTootDom(settings, dom, isAdmin));
   });
 
   const parser = new HtmlParser.Parser(handler);
