@@ -11,7 +11,7 @@ export const makeFullyQualifiedAccount = (account) => {
 };
 
 export const isAdmin = ({ adminAccounts }, account) => {
-  return adminAccounts.includes(account);
+  return adminAccounts.includes(account.toLowerCase().trim());
 };
 
 export const isBot = ({ botAccount }, account) => {

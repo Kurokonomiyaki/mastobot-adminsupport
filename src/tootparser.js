@@ -24,17 +24,23 @@ const domNodeToText = (settings, node, text = [], isAdmin = false) => {
     return;
   }
 
-  // ignore mentionned users
-  if (name === 'a' && className != null && className.includes('mention')) {
+  if (name === 'a') {
     const { href } = attribs;
-    if (href != null) {
-      const account = parseAccountUrl(href);
-      if (account != null && isAdmin && isBot(settings, account) === false) {
-        text.push(account);
+    // ignore mentionned users
+    if (className != null && className.includes('mention')) {
+      if (href != null) {
+        const account = parseAccountUrl(href);
+        if (account != null && isAdmin && isBot(settings, account) === false) {
+          text.push(account);
+        }
+        return;
       }
-      return;
+    } else if (href != null) {
+        text.push(href);
+        return;
     }
   }
+ 
 
   // analyze children
   if (children != null && children.length > 0) {
@@ -62,7 +68,15 @@ const analyzeTootDom = (settings, dom, isAdmin = false) => {
     return null;
   }
 
-  return HtmlEntities.decode(texts.join(' ').trim());
+  const text = texts.reduce((result, current) => {
+    if (current != null && current.trim().length != 0) {
+      result = `${result}${current} `;
+    } else {
+      result = `${result}${current}`;
+    }
+    return result;
+  }, '');
+  return HtmlEntities.decode(text.trim());
 };
 
 export const parseToot = (settings, toot, isAdmin, onResult) => {

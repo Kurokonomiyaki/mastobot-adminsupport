@@ -5,11 +5,15 @@ import { isAdmin, parseAccountUrl } from './util';
 import { getSettings } from './settings';
 
 
-const sendMessageToCommunity = (settings, instance, author, message) => {
+const sendMessageToCommunity = (settings, instance, author, message, cw) => {
   const finalMessage = `${message}\n\n--\n${author}`;
-  instance.post('statuses', Object.assign({
+  const toot = {
     status: finalMessage,
-  }, settings.tootOptions));
+  };
+  if (cw != null) {
+    toot.spoiler_text = cw;
+  }
+  instance.post('statuses', Object.assign(toot, settings.tootOptions));
 };
 
 const sendMessageToAdmins = (settings, instance, originalTootId, from, message, originalVisibility) => {
@@ -46,7 +50,7 @@ const onMessageReceived = (settings, instance, message) => {
     parseToot(settings, toot.content, admin, (text) => {
       if (admin) { // sent by admin
         console.log('Admin message received', authorAccount, text.replace(/[\n|\r]/gm, ''));
-        sendMessageToCommunity(settings, instance, authorAccount, text);
+        sendMessageToCommunity(settings, instance, authorAccount, text, toot.spoiler_text);
       } else { // sent by regular user
         console.log('User message received', authorAccount, text.replace(/[\n|\r]/gm, ''));
         sendMessageToAdmins(settings, instance, toot.id, authorAccount, text, toot.visibility);
